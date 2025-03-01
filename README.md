@@ -15,6 +15,12 @@ OBSRecode streamlines the re-encoding process for OBS recordings, eliminating th
 
 ## Installation
 
+### Standalone executable available.
+Running OBSRecode as an Executable
+1. Download: Get OBSRecode.exe from GitHub Releases.
+2. Requirements: Install HandbrakeCLI from handbrake.fr and note its path (e.g., C:\Program Files\HandBrake\HandBrakeCLI.exe).
+3. Run: Double-click OBSRecode.exe, configure settings, and start processing.
+
 ### Prerequisites
 
 * **OS:** Windows 10 or 11
