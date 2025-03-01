@@ -107,6 +107,8 @@ On first run, a settings file is created at `C:\Users\<Username>\AppData\Roaming
 
 Report bugs or suggest features via [GitHub Issues](https://github.com/Callidus80/OBSRecode/issues).
 
+If you would like to support my work: [Buy me a beer](https://www.paypal.com/donate/?hosted_button_id=KDGESDGHAJGLN).
+
 ## License
 
 Default copyright laws apply.
