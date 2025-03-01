@@ -104,6 +104,12 @@ On first run, a settings file is created at `C:\Users\<Username>\AppData\Roaming
 * **OBS Integration:** In OBS, set File > Settings > Advanced > Filename Formatting to "OBS%CCYY-%MM-%DD %hh-%mm-%ss" (e.g., `OBS2025-03-01 12-00-00.mkv`). Use "OBS" in "Filename starts with" to target these files.
 * Screenshot below.
 <img width="830" alt="2025-03-01 16_16_45-Settings" src="https://github.com/user-attachments/assets/632df914-d992-4d4b-86fb-9f488fba7c53" />
+
+To target the files prefixed with OBS enter it here under Settings in OBSRecode
+
+<img width="371" alt="2025-03-01 17_31_46-2025-03-01 17_25_49-OBSRecode png ‎- Photos" src="https://github.com/user-attachments/assets/8de5e95c-17fd-47cd-b85f-f974206ad4fc" />
+
+
 * **Performance:** Lower bitrate (e.g., 4000 kbps) for smaller files; use an SSD for speed.
 
 ## Troubleshooting
