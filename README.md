@@ -4,6 +4,8 @@
 
 OBSRecode is a Python-based GUI tool that simplifies re-encoding OBS (Open Broadcaster Software) video recordings using HandbrakeCLI. It leverages NVIDIA's NVenc AV1 encoder to batch process `.mkv`, `.mp4`, and `.mov` files, reducing file sizes while maintaining quality.
 
+OBSRecode is an essential tool for archiving and storing OBS-recorded content, making it ideal for gamers, streamers, and creators who need to manage their footage efficiently. On-the-fly recordings in OBS often prioritize fast, GPU-efficient encoding to capture video in real-time, producing large file sizes that can overwhelm storage capacity. OBSRecode addresses this by re-encoding your recordings with HandbrakeCLI’s slower, more optimized presets, utilizing advanced compression like NVIDIA’s NVenc AV1 encoder after you're finished gaming. This significantly reduces file sizes for archiving and long-term storage purposes, while maintaining high-quality visuals. With its user-friendly GUI, OBSRecode simplifies the process, ensuring your most valued clips remain compact and preserved without cluttering your drives.
+
 ## Windows OS Only
 
 ## Overview
