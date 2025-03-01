@@ -17,7 +17,7 @@ OBSRecode streamlines the re-encoding process for OBS recordings, eliminating th
 
 ## Installation
 
-### Standalone executable available.
+### **Standalone executable available.**
 Running OBSRecode as an Executable
 1. Download: Get OBSRecode.exe from GitHub Releases.
 2. Requirements: Install HandbrakeCLI from handbrake.fr and note its path (e.g., C:\Program Files\HandBrake\HandBrakeCLI.exe).
@@ -30,7 +30,8 @@ Running OBSRecode as an Executable
 * **Software:**
 
   - Python 3.6+ ([Download](https://www.python.org/downloads/))
-  - HandbrakeCLI ([Download](https://handbrake.fr/downloads.php))
+  - HandbrakeCLI ([Download](https://handbrake.fr/downloads2.php))
+ 
 
 ### Steps
 
@@ -73,8 +74,6 @@ On first run, a settings file is created at `C:\Users\<Username>\AppData\Roaming
 2. Click "Start".
 3. Confirm "Process All Files" if no prefix is set.
 4. Re-encoded files are prefixed with "RE " (e.g., `RE OBS_Game1.mkv`).
-
-For detailed instructions, see the [Help File](HELP.md).
 
 ## Features
 
