@@ -19,14 +19,18 @@ OBSRecode streamlines the re-encoding process for OBS recordings, eliminating th
 
 # **Standalone executable available.**
 Running OBSRecode as an Executable
-1. Download: Get OBSRecode.exe from GitHub Releases.
-2. Requirements: Install HandbrakeCLI from handbrake.fr and note its path (e.g., C:\Program Files\HandBrake\HandBrakeCLI.exe).
+1. Download: Get ([OBSRecode.exe](https://github.com/Callidus80/OBSRecode/blob/main/OBSRecode.exe)) from GitHub Releases.
+2. Requirements: Install HandbrakeCLI ([Download](https://handbrake.fr/downloads2.php)) from handbrake.fr and note its path (e.g., C:\Program Files\HandBrake\HandBrakeCLI.exe).
 3. Run: Double-click OBSRecode.exe, configure settings, and start processing.
 
+ <br />
+  <br />
+   <br />
+      <br />
 
 
-
-## Installation
+## Manual Python Installation.
+Not required if you are using **Standalone executable available** above.
 
 
 ### Prerequisites
@@ -59,6 +63,9 @@ python OBSRecode.py
 
 ## Usage
 
+<img width="425" alt="2025-03-01 17_26_34-OBSRecode" src="https://github.com/user-attachments/assets/4b364e4c-295c-45a1-9a62-c4cfc66cc2c3" />
+
+
 ### Initial Setup
 
 On first run, a settings file is created at `C:\Users\<Username>\AppData\Roaming\OBSRecode\OBSRecodeSettings.json`.
@@ -72,6 +79,8 @@ On first run, a settings file is created at `C:\Users\<Username>\AppData\Roaming
   - **Filename starts with:** Optional prefix (e.g., "OBS") or blank for all videos.
   - **Bitrate (kbps):** Optional, defaults to 6000 kbps.
 3. Click "Save".
+<img width="370" alt="2025-03-01 17_25_57-Settings" src="https://github.com/user-attachments/assets/98632a13-6d8a-4299-9292-4db55b53a9e1" />
+
 
 
 ### Re-encoding
