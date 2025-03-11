@@ -13,6 +13,7 @@ OBSRecode is an essential tool for archiving and storing OBS-recorded content, m
 OBSRecode streamlines the re-encoding process for OBS recordings, eliminating the need for manual command-line usage. Key features include:
 
 * Batch processing with optional filename prefix filtering (e.g., "OBS").
+* Fire and forget. Option to auto shutdown OS once processing complete.
 * Customizable bitrate settings.
 * Automatic "RE " prefix for re-encoded files to distinguish them from originals.
 * Real-time progress tracking and detailed logging.
