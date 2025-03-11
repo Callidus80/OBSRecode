@@ -7,6 +7,7 @@ from tkinter import ttk, scrolledtext, filedialog, messagebox
 import threading
 import json
 import webbrowser
+import platform
 
 # Define settings file location in AppData\Roaming\OBSRecode
 SETTINGS_DIR = os.path.join(os.getenv('APPDATA'), 'OBSRecode')
@@ -32,6 +33,7 @@ class OBSRecodeGUI:
         self.auto_overwrite = tk.BooleanVar(value=self.settings.get("auto_overwrite", False))
         self.delete_original = tk.BooleanVar(value=self.settings.get("delete_original", True))
         self.write_logfile = tk.BooleanVar(value=self.settings.get("write_logfile", False))
+        self.shutdown_after_completion = tk.BooleanVar(value=self.settings.get("shutdown_after_completion", False))
 
         # Setup menu
         self.menu_bar = tk.Menu(root)
@@ -65,9 +67,15 @@ class OBSRecodeGUI:
         self.update_note_label()
         self.note_label.pack(pady=5)
 
-        # Files found label
-        self.files_found_label = tk.Label(self.main_frame, text="Files found for processing: 0")
-        self.files_found_label.pack(pady=5)
+        # Files found frame
+        self.files_found_frame = tk.Frame(self.main_frame)
+        self.files_found_frame.pack(pady=5)
+        self.files_found_label = tk.Label(self.files_found_frame, text="Files found for processing: 0")
+        self.files_found_label.pack(side=tk.LEFT, padx=5)
+        self.refresh_button = tk.Button(self.files_found_frame, text="Refresh", command=self.update_files_found)
+        self.refresh_button.pack(side=tk.LEFT, padx=5)
+        self.view_button = tk.Button(self.files_found_frame, text="View", command=self.view_files_to_process)
+        self.view_button.pack(side=tk.LEFT, padx=5)
         self.update_files_found()
 
         # Progress label
@@ -125,8 +133,12 @@ class OBSRecodeGUI:
         self.delete_check.pack(side=tk.LEFT, padx=5)
 
         # Write to Logfile tick box
-        self.logfile_check = tk.Checkbutton(self.options_frame, text="Write to Logfile", variable=self.write_logfile, command=self.save_options)
+        self.logfile_check = tk.Checkbutton(self.options_frame, text="Write to Logfile", variable=self.write_logfile, command=self.toggle_logfile)
         self.logfile_check.pack(side=tk.LEFT, padx=5)
+
+        # Shutdown After Completion tick box
+        self.shutdown_check = tk.Checkbutton(self.options_frame, text="Shutdown PC After Completion", variable=self.shutdown_after_completion, command=self.save_options)
+        self.shutdown_check.pack(side=tk.LEFT, padx=5)
 
         # Log text area
         self.log_text = scrolledtext.ScrolledText(self.main_frame, width=130, height=20)
@@ -142,9 +154,11 @@ class OBSRecodeGUI:
         self.is_processing = False
         self.settings_window = None
         self.support_window = None
+        self.view_window = None  # Track view window instance
+        self.logger = None  # Initialize logger as None
 
-        if self.settings_valid:
-            self.setup_logging()
+        # Initial logfile setup
+        self.toggle_logfile()
 
     def load_and_validate_settings(self):
         defaults = {
@@ -156,7 +170,8 @@ class OBSRecodeGUI:
             "debug_mode": False,
             "auto_overwrite": False,
             "delete_original": True,
-            "write_logfile": False
+            "write_logfile": False,
+            "shutdown_after_completion": False
         }
         if not os.path.exists(SETTINGS_FILE):
             return defaults, False
@@ -168,7 +183,7 @@ class OBSRecodeGUI:
             for key in required:
                 if key not in settings or not settings[key]:
                     return defaults, False
-            for key in ["search_text", "bitrate", "debug_mode", "auto_overwrite", "delete_original", "write_logfile"]:
+            for key in ["search_text", "bitrate", "debug_mode", "auto_overwrite", "delete_original", "write_logfile", "shutdown_after_completion"]:
                 if key not in settings:
                     settings[key] = defaults[key]
             return settings, True
@@ -179,7 +194,6 @@ class OBSRecodeGUI:
         with open(SETTINGS_FILE, "w") as f:
             json.dump(self.settings, f, indent=4)
         self.settings_valid = True
-        self.setup_logging()
         self.update_note_label()
         self.update_cli_status()
         self.update_files_found()
@@ -189,20 +203,33 @@ class OBSRecodeGUI:
         self.settings["auto_overwrite"] = self.auto_overwrite.get()
         self.settings["delete_original"] = self.delete_original.get()
         self.settings["write_logfile"] = self.write_logfile.get()
+        self.settings["shutdown_after_completion"] = self.shutdown_after_completion.get()
         self.save_settings()
-
-    def setup_logging(self):
-        log_path = os.path.normpath(os.path.join(self.settings["output_dir"], LOG_FILE))
-        level = logging.DEBUG if self.debug_mode.get() else logging.INFO
-        logging.basicConfig(
-            filename=log_path,
-            level=level,
-            format="%(asctime)s - %(levelname)s - %(message)s"
-        )
 
     def toggle_debug(self):
         self.save_options()
         self.log_message(f"Debug mode {'enabled' if self.debug_mode.get() else 'disabled'}.")
+
+    def toggle_logfile(self):
+        """Enable or disable logging to file based on write_logfile toggle."""
+        self.save_options()
+        if self.write_logfile.get() and self.settings_valid and self.settings["output_dir"]:
+            # Enable logging to file
+            log_path = os.path.normpath(os.path.join(self.settings["output_dir"], LOG_FILE))
+            level = logging.DEBUG if self.debug_mode.get() else logging.INFO
+            logging.basicConfig(
+                filename=log_path,
+                level=level,
+                format="%(asctime)s - %(levelname)s - %(message)s"
+            )
+            self.logger = logging.getLogger()
+            self.log_message("Logging to file enabled.")
+        else:
+            # Disable logging to file by setting a null handler
+            if self.logger:
+                self.logger.handlers = []  # Remove file handlers
+                self.logger.addHandler(logging.NullHandler())  # Use null handler to prevent logging
+            self.log_message("Logging to file disabled.")
 
     def update_note_label(self):
         if self.settings_valid:
@@ -218,12 +245,15 @@ class OBSRecodeGUI:
             self.cli_status_label.config(text=f"HandbrakeCLI not found at: {cli_path or 'Not set'}. Configure Settings.", fg="red")
 
     def update_files_found(self):
+        """Recheck the source directory for files to process and update the label."""
         if not self.settings_valid or not self.settings["source_dir"]:
             self.files_found_label.config(text="Files found for processing: 0")
+            self.files_to_process = []
             return
         
         if not os.path.exists(self.settings["source_dir"]):
             self.files_found_label.config(text="Files found for processing: 0 (Source directory not found)")
+            self.files_to_process = []
             return
 
         search_text = self.settings["search_text"]
@@ -241,8 +271,42 @@ class OBSRecodeGUI:
                 os.path.splitext(f)[1].lower() in VALID_EXTENSIONS
             ]
         
-        count = len(video_files)
+        self.files_to_process = [os.path.normpath(os.path.join(self.settings["source_dir"], f)) for f in video_files]
+        count = len(self.files_to_process)
         self.files_found_label.config(text=f"Files found for processing: {count}")
+        self.log_message(f"Refreshed file list: {count} files found.", "DEBUG")
+
+    def view_files_to_process(self):
+        """Open a popup window showing all files to be processed."""
+        if self.view_window and self.view_window.winfo_exists():
+            self.view_window.lift()
+            self.view_window.focus_force()
+            return
+
+        if not self.files_to_process:
+            messagebox.showinfo("No Files", "No files found to process. Please check your settings and source directory.")
+            return
+
+        self.view_window = tk.Toplevel(self.root)
+        self.view_window.title("Files to Process")
+        self.view_window.geometry("600x400")
+        self.view_window.minsize(600, 400)
+        self.view_window.grab_set()
+
+        # Header
+        tk.Label(self.view_window, text="Files to be Processed", font=("Helvetica", 12, "bold")).pack(pady=5)
+
+        # Scrolled text area for file list
+        file_list_text = scrolledtext.ScrolledText(self.view_window, width=80, height=20)
+        file_list_text.pack(pady=5, fill="both", expand=True)
+
+        # Populate the file list
+        for file_path in self.files_to_process:
+            file_list_text.insert(tk.END, f"{file_path}\n")
+        file_list_text.config(state="disabled")  # Make read-only
+
+        # Close button
+        tk.Button(self.view_window, text="Close", command=self.view_window.destroy).pack(pady=5)
 
     def open_settings_window(self):
         if self.is_processing:
@@ -403,6 +467,7 @@ class OBSRecodeGUI:
             messagebox.showerror("Error", "HandbrakeCLI executable, source directory, and output directory are required.")
             return
         self.save_settings()
+        self.toggle_logfile()  # Update logging state after saving settings
         self.log_message("Settings saved successfully.")
         window.destroy()
 
@@ -474,13 +539,15 @@ class OBSRecodeGUI:
     def log_message(self, message, level="INFO"):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = f"{timestamp} - {level} - {message}"
+        # Always log to GUI text area if valid settings
         if self.settings_valid and self.settings["output_dir"]:
             current_level = logging.DEBUG if self.debug_mode.get() else logging.INFO
             if logging.getLevelName(level) >= current_level:
-                if self.write_logfile.get():
-                    getattr(logging, level.lower())(message)
                 self.log_text.insert(tk.END, log_entry + "\n")
                 self.log_text.see(tk.END)
+                # Log to file only if write_logfile is enabled and logger is set
+                if self.write_logfile.get() and self.logger:
+                    getattr(self.logger, level.lower())(message)
 
     def update_progress(self):
         if self.total_files > 0:
@@ -549,7 +616,13 @@ class OBSRecodeGUI:
         self.log_message(f"Executing command: {' '.join(command)}", "DEBUG")
 
         try:
-            self.current_process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.current_process = subprocess.Popen(
+                command, 
+                text=True, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
             stdout, stderr = self.current_process.communicate()
 
             self.log_message(f"HandBrakeCLI stdout: {stdout}", "DEBUG")
@@ -593,7 +666,6 @@ class OBSRecodeGUI:
             self.exit_button.config(state="normal")
             self.is_processing = False
             self.settings_menu.entryconfig("Configure Settings", state="normal")
-            self.support_menu.entryconfig("Buy Me a Beer", state="normal")
             self.help_menu.entryconfig("Documentation", state="normal")
             self.enable_tick_boxes()
             return
@@ -604,7 +676,6 @@ class OBSRecodeGUI:
         self.exit_button.config(state="disabled")
         self.is_processing = True
         self.settings_menu.entryconfig("Configure Settings", state="disabled")
-        self.support_menu.entryconfig("Buy Me a Beer", state="disabled")
         self.help_menu.entryconfig("Documentation", state="disabled")
         self.disable_tick_boxes()
 
@@ -624,7 +695,6 @@ class OBSRecodeGUI:
         self.exit_button.config(state="normal")
         self.is_processing = False
         self.settings_menu.entryconfig("Configure Settings", state="normal")
-        self.support_menu.entryconfig("Buy Me a Beer", state="normal")
         self.help_menu.entryconfig("Documentation", state="normal")
         self.enable_tick_boxes()
 
@@ -638,7 +708,6 @@ class OBSRecodeGUI:
         self.exit_button.config(state="normal")
         self.is_processing = False
         self.settings_menu.entryconfig("Configure Settings", state="normal")
-        self.support_menu.entryconfig("Buy Me a Beer", state="normal")
         self.help_menu.entryconfig("Documentation", state="normal")
         self.enable_tick_boxes()
 
@@ -647,18 +716,40 @@ class OBSRecodeGUI:
         self.overwrite_check.config(state="normal")
         self.delete_check.config(state="normal")
         self.logfile_check.config(state="normal")
+        self.shutdown_check.config(state="normal")
 
     def disable_tick_boxes(self):
         self.debug_check.config(state="disabled")
         self.overwrite_check.config(state="disabled")
         self.delete_check.config(state="disabled")
         self.logfile_check.config(state="disabled")
+        self.shutdown_check.config(state="disabled")
 
     def enable_close_button(self, cancelled=False):
         if cancelled:
             self.close_button.config(text="Process Cancelled - Click to Close", state="normal", bg="red", fg="white")
         else:
             self.close_button.config(text="COMPLETED - Click to Close", state="normal", bg="green", fg="white")
+            if self.shutdown_after_completion.get():
+                self.log_message("Shutdown PC option enabled. System will shut down after closing.")
+                self.root.after(2000, self.shutdown_pc)  # Delay shutdown by 2 seconds
+
+    def shutdown_pc(self):
+        """Shutdown the PC based on the operating system."""
+        system = platform.system()
+        try:
+            if system == "Windows":
+                os.system("shutdown /s /t 5")  # Shutdown in 5 seconds
+                self.log_message("Initiating Windows shutdown in 5 seconds.")
+            elif system == "Linux" or system == "Darwin":  # Darwin is macOS
+                os.system("shutdown -h now")  # Immediate shutdown for Linux/macOS
+                self.log_message("Initiating shutdown now.")
+            else:
+                self.log_message(f"Shutdown not supported on {system}. Please shut down manually.", "WARNING")
+        except Exception as e:
+            self.log_message(f"Failed to initiate shutdown: {e}", "ERROR")
+        finally:
+            self.close_gui()  # Close the GUI after initiating shutdown
 
     def close_gui(self):
         if self.is_processing:
