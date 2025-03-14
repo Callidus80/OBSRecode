@@ -510,8 +510,9 @@ class OBSRecodeGUI:
         if not self.auto_overwrite.get():
             existing_files = []
             for input_file in self.files_to_process:
-                base_name = os.path.basename(input_file)
-                output_file = os.path.normpath(os.path.join(self.settings["output_dir"], f"RE {base_name}"))
+                # Use os.path.splitext to get the base name without extension and append .mkv
+                base_name_no_ext = os.path.splitext(os.path.basename(input_file))[0]
+                output_file = os.path.normpath(os.path.join(self.settings["output_dir"], f"RE {base_name_no_ext}.mkv"))
                 if os.path.exists(output_file):
                     existing_files.append(output_file)
 
@@ -591,8 +592,9 @@ class OBSRecodeGUI:
         if self.cancel_flag.is_set():
             return
 
-        base_name = os.path.basename(input_file)
-        output_file = os.path.normpath(os.path.join(self.settings["output_dir"], f"RE {base_name}"))
+        # Get the base name without extension and append .mkv
+        base_name_no_ext = os.path.splitext(os.path.basename(input_file))[0]
+        output_file = os.path.normpath(os.path.join(self.settings["output_dir"], f"RE {base_name_no_ext}.mkv"))
 
         self.update_file_status(input_file, "processing")
         self.log_message(f"Starting processing: {input_file} -> {output_file}")
